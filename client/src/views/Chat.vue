@@ -4,9 +4,13 @@
       <div
         v-for="(msg, index) in messages"
         :key="index"
-        :class="['message', msg.sender === 'user' ? 'user-message' : 'bot-message']"
+        :class="['message-wrapper', msg.sender === 'user' ? 'align-right' : 'align-left']"
       >
-        {{ msg.text}}
+        <div
+          :class="['message-bubble', msg.sender === 'user' ? 'user-bubble' : 'bot-bubble']"
+        >
+          {{ msg.text }}
+        </div>
       </div>
     </div>
     <div class="chat-input">
@@ -22,7 +26,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onUpdated } from 'vue'
 
 const messages = ref([])
 const userInput = ref('')
@@ -37,10 +41,12 @@ async function sendMessage() {
   userInput.value = ''
 
   try {
-    const response = await fetch(url, {method: "POST",headers: {
-        "Content-Type": "application/json", // Specify JSON content type
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
       },
-      body: JSON.stringify({ message: text }), // Convert the body to JSON
+      body: JSON.stringify({ message: text }),
     });
     if (!response.ok) {
       throw new Error(`Response status: ${response.status}`);
@@ -48,24 +54,38 @@ async function sendMessage() {
 
     const json = await response.json();
     messages.value.push({ sender: 'bot', text: json["message"].toString() });
-    console.log(messages)
   } catch (error) {
     console.error(error);
   }
 }
+
+// Auto-scroll to bottom on new message
+onUpdated(() => {
+  const container = chatMessages.value;
+  if (container) {
+    container.scrollTop = container.scrollHeight;
+  }
+});
 </script>
 
 <style scoped>
 .chat-container {
-  width: 92vw;
-  height: 92vh;
-  padding: 4%;
-  background: #ffffff;
-  border-radius: 1px;
-  box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+   width: 80vw;
+  height: 90vh;
+  background: #f5f5f5;
+  border-radius: 12px;
+  border: 2px solid #4CAF50;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  font-family: sans-serif;
+
+  /* Center on screen */
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .chat-messages {
@@ -74,50 +94,71 @@ async function sendMessage() {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
+  border-bottom: 1px solid #4CAF50;
+  background-color: #ffffff;
+}
+
+.message-wrapper {
+  display: flex;
+}
+
+.align-right {
+  justify-content: flex-end;
+}
+
+.align-left {
+  justify-content: flex-start;
+}
+
+.message-bubble {
+  padding: 10px 15px;
+  border-radius: 20px;
+  max-width: 70%;
+  word-wrap: break-word;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.user-bubble {
+  background-color: #dcf8c6;
+  color: #000;
+  border-bottom-right-radius: 0;
+}
+
+.bot-bubble {
+  background-color: #ececec;
+  color: #000;
+  border-bottom-left-radius: 0;
 }
 
 .chat-input {
   display: flex;
-  padding: 10px;
+  padding: 15px;
   border-top: 1px solid #ddd;
+  background-color: #fafafa;
 }
 
 .chat-input input {
   flex: 1;
-  padding: 10px;
+  padding: 10px 14px;
   border: 1px solid #ccc;
-  border-radius: 5px;
-  margin-right: 10px;
+  border-radius: 20px;
+  outline: none;
 }
 
 .chat-input button {
-  padding: 10px 20px;
-  border: none;
+  margin-left: 10px;
+  padding: 10px 18px;
   background-color: #4CAF50;
   color: white;
-  border-radius: 5px;
+  border: none;
+  border-radius: 20px;
   cursor: pointer;
+  transition: background-color 0.2s;
 }
 
 .chat-input button:hover {
   background-color: #45a049;
-}
-
-.message {
-  padding: 10px;
-  border-radius: 10px;
-  max-width: 80%;
-  word-wrap: break-word;
-}
-
-.user-message {
-  background-color: #dcf8c6;
-  align-self: flex-end;
-}
-
-.bot-message {
-  background-color: #f1f0f0;
-  align-self: flex-start;
 }
 </style>
